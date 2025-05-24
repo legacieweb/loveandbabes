@@ -359,7 +359,7 @@ document.addEventListener('click', () => {
 }, { once: true });
 
 
-const socket = io("http://localhost:3000");
+const socket = io("https://loveandbabes.onrender.com");
 
 // 🔐 Register user immediately after socket connects
 socket.on("connect", () => {
@@ -371,7 +371,7 @@ socket.on("connect", () => {
   let user = {};
 async function loadUserData() {
   try {
-    const res = await fetch(`http://localhost:3000/user/${email}`);
+    const res = await fetch(`https://loveandbabes.onrender.com/user/${email}`);
     user = await res.json();
 let latestOffer = null;
 
@@ -502,7 +502,7 @@ async function sendProfileUpdate(formData, base64Image) {
   }
 
   try {
-    const res = await fetch("http://localhost:3000/user/update", {
+    const res = await fetch("https://loveandbabes.onrender.com/user/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updatedUser)
@@ -539,7 +539,7 @@ async function uploadImages() {
   }));
 
   try {
-    await fetch(`http://localhost:3000/user/gallery/upload`, {
+    await fetch(`https://loveandbabes.onrender.com/user/gallery/upload`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, images: base64Images })
@@ -561,7 +561,7 @@ async function uploadImages() {
 
 async function loadGallery() {
   try {
-    const res = await fetch(`http://localhost:3000/user/gallery/${email}`);
+    const res = await fetch(`https://loveandbabes.onrender.com/user/gallery/${email}`);
     const images = await res.json();
 
     const galleryEl = document.getElementById("my-gallery");
@@ -645,7 +645,7 @@ async function checkChatAccess(view = "messages") {
   if (!container) return;
 
   try {
-    const res = await fetch(`http://localhost:3000/user/matches/${email}`);
+    const res = await fetch(`https://loveandbabes.onrender.com/user/matches/${email}`);
     const matchedEmails = await res.json();
 
     if (!Array.isArray(matchedEmails) || matchedEmails.length === 0) {
@@ -654,7 +654,7 @@ async function checkChatAccess(view = "messages") {
     }
 
     const profiles = await Promise.all(
-      matchedEmails.map(e => fetch(`http://localhost:3000/user/${e}`).then(r => r.json()))
+      matchedEmails.map(e => fetch(`https://loveandbabes.onrender.com/user/${e}`).then(r => r.json()))
     );
 
     container.innerHTML = profiles.map(u => `
@@ -687,7 +687,7 @@ async function startChat(targetEmail, name, view = "messages") {
     // Load messages
     messageBox.innerHTML = "<p class='text-gray-400'>Loading messages...</p>";
     try {
-      const res = await fetch(`http://localhost:3000/messages/${email}/${targetEmail}`);
+      const res = await fetch(`https://loveandbabes.onrender.com/messages/${email}/${targetEmail}`);
       const messages = await res.json();
 
       if (!Array.isArray(messages) || messages.length === 0) {
@@ -741,8 +741,8 @@ async function loadUsers(filters = {}) {
 
   try {
     const [usersRes, currentUserRes] = await Promise.all([
-      fetch(`http://localhost:3000/users?${params}`),
-      fetch(`http://localhost:3000/user/${email}`)
+      fetch(`https://loveandbabes.onrender.com/users?${params}`),
+      fetch(`https://loveandbabes.onrender.com/user/${email}`)
     ]);
 
     if (!usersRes.ok || !currentUserRes.ok) throw new Error("Failed to fetch data");
@@ -861,7 +861,7 @@ function applyFilters() {
   }
 
   try {
-    const res = await fetch("http://localhost:3000/user/like", {
+    const res = await fetch("https://loveandbabes.onrender.com/user/like", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ liker: email, liked: targetEmail })
@@ -895,7 +895,7 @@ async function requestUserIdCode() {
   getIdBtn.textContent = "Sending...";
 
   try {
-    const res = await fetch("http://localhost:3000/send-id-code", {
+    const res = await fetch("https://loveandbabes.onrender.com/send-id-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email })
@@ -931,7 +931,7 @@ async function verifyAndGenerateId() {
   }
 
   try {
-    const res = await fetch("http://localhost:3000/verify-id-code", {
+    const res = await fetch("https://loveandbabes.onrender.com/verify-id-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, code })
@@ -983,7 +983,7 @@ function previewSelectedImages() {
 
 async function loadLikes() {
   try {
-    const res = await fetch(`http://localhost:3000/user/${email}`);
+    const res = await fetch(`https://loveandbabes.onrender.com/user/${email}`);
     const user = await res.json();
 
     const youLiked = user.likes || [];
@@ -1004,7 +1004,7 @@ async function loadLikes() {
     }
 
     for (const likedEmail of youLiked) {
-      const userRes = await fetch(`http://localhost:3000/user/${likedEmail}`);
+      const userRes = await fetch(`https://loveandbabes.onrender.com/user/${likedEmail}`);
       if (!userRes.ok) continue;
       const u = await userRes.json();
       if (!u.userId) continue;
@@ -1020,7 +1020,7 @@ async function loadLikes() {
     }
 
     for (const likedByEmail of likedYou) {
-      const userRes = await fetch(`http://localhost:3000/user/${likedByEmail}`);
+      const userRes = await fetch(`https://loveandbabes.onrender.com/user/${likedByEmail}`);
       if (!userRes.ok) continue;
       const u = await userRes.json();
       if (!u.userId) continue;

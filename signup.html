@@ -307,7 +307,7 @@ async function submitForm() {
   }
 
   try {
-    const res = await fetch("http://localhost:3000/send-verification", {
+    const res = await fetch("https://loveandbabes.onrender.com/send-verification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email })
@@ -383,7 +383,7 @@ async function submitCode() {
   };
 
   try {
-    const res = await fetch("http://localhost:3000/verify-code", {
+    const res = await fetch("https://loveandbabes.onrender.com/verify-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code, userData })
@@ -414,7 +414,7 @@ async function submitCode() {
       const likedEmail = localStorage.getItem("liked_email");
       if (likedEmail) {
         try {
-          await fetch("http://localhost:3000/user/like", {
+          await fetch("https://loveandbabes.onrender.com/user/like", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ liker: userData.email, liked: likedEmail })
