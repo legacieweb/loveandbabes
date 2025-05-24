@@ -62,7 +62,7 @@ async function sendResetCode() {
   }
 
   try {
-    const res = await fetch("http://localhost:3000/send-reset-code", {
+    const res = await fetch("https://loveandbabes.onrender.com/send-reset-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email })
@@ -92,7 +92,7 @@ async function submitReset() {
   }
 
   try {
-    const res = await fetch("http://localhost:3000/verify-reset-code", {
+    const res = await fetch("https://loveandbabes.onrender.com/verify-reset-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, code, newPassword: password })
@@ -113,6 +113,7 @@ async function submitReset() {
 
 <script>
   const form = document.querySelector("form");
+  const loginBtn = form.querySelector('button[type="submit"]');
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -125,8 +126,12 @@ async function submitReset() {
       return;
     }
 
+    // 🔐 Disable the login button to prevent duplicates
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Logging in...";
+
     try {
-      const res = await fetch("http://localhost:3000/login", {
+      const res = await fetch("https://loveandbabes.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -135,17 +140,22 @@ async function submitReset() {
       const data = await res.json();
 
       if (data.success) {
-        localStorage.setItem("user_email", email); // store user
-        window.location.href = "dashboard.html";   // redirect
+        localStorage.setItem("user_email", email);
+        window.location.href = "dashboard.html";
       } else {
         alert(data.message || "Login failed. Try again.");
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Login";
       }
     } catch (err) {
       console.error("❌ Login error:", err);
       alert("Server error. Try again later.");
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Login";
     }
   });
 </script>
+
 
 </body>
 </html>

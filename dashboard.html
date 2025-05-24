@@ -214,7 +214,6 @@
 </section>
 
 <!-- 📞 Calls Section -->
-<!-- 📞 Calls Section -->
 <section id="calls" class="section hidden animate-fade-in-up">
   <div class="bg-white rounded-xl shadow-lg w-full max-w-5xl mx-auto h-[80vh] flex">
     
@@ -226,17 +225,16 @@
       </div>
     </aside>
 
-    <!-- 📞 Call Panel -->
+    <!-- 🎥 Call Panel -->
     <div class="w-1/2 p-4 flex flex-col space-y-4 items-center justify-between">
       <div class="text-center w-full">
         <div id="call-selected-name" class="text-lg font-semibold text-pink-600 mb-4">
-          📞 Select a user to call
+          📹 Select a user to video call
         </div>
 
-        <!-- Controls -->
-        <div class="flex gap-6 justify-center mb-2">
+        <!-- Video Call Button Only -->
+        <div class="flex justify-center mb-2">
           <button id="call-video-btn" onclick="startCall('video')" class="bg-pink-500 text-white px-5 py-3 rounded-full text-xl hover:bg-pink-600 transition disabled:opacity-50" disabled>🎥</button>
-          <button id="call-audio-btn" onclick="startCall('audio')" class="bg-blue-500 text-white px-5 py-3 rounded-full text-xl hover:bg-blue-600 transition disabled:opacity-50" disabled>📞</button>
         </div>
 
         <!-- End Call Button -->
@@ -245,7 +243,7 @@
         </button>
       </div>
 
-      <!-- Embedded Video/Audio Streams -->
+      <!-- Embedded Video Streams -->
       <div id="embedded-call-area" class="w-full hidden">
         <div class="flex gap-4 justify-center">
           <video id="localVideo" autoplay muted playsinline class="w-1/2 h-40 rounded-lg shadow"></video>
@@ -256,16 +254,12 @@
   </div>
 </section>
 
-<!-- 🔊 Ringing Audio -->
-<audio id="incoming-ring" src="assets/hey-there-63200.mp3" preload="auto" loop></audio>
-<audio id="outgoing-ring" src="assets/telephone-dial-and-call-ring-21151.mp3" preload="auto" loop></audio>
-
 <!-- Incoming Call Ringer -->
 <div id="ringer" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center hidden z-50">
   <div class="bg-white rounded-lg p-6 shadow space-y-4 text-center">
     <img id="ringer-image" src="https://placehold.co/80" class="w-20 h-20 rounded-full mx-auto object-cover" />
-    <h3 id="ringer-name" class="text-lg font-semibold">📞 Incoming Call</h3>
-    <p id="ringer-type" class="text-sm text-gray-500">📞 Audio Call</p>
+    <h3 id="ringer-name" class="text-lg font-semibold">📹 Incoming Video Call</h3>
+    <p id="ringer-type" class="text-sm text-gray-500">📹 Video Call</p>
     <div class="flex justify-center gap-4 mt-4">
       <button onclick="acceptCall()" class="px-4 py-2 bg-green-500 text-white rounded-full hover:bg-green-600">✅ Accept</button>
       <button onclick="rejectCall()" class="px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600">❌ Reject</button>
@@ -276,7 +270,7 @@
 <!-- Calling Overlay -->
 <div id="calling-overlay" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center hidden z-50">
   <div class="bg-white rounded-lg p-6 shadow-lg text-center space-y-4 max-w-sm">
-    <p id="calling-status" class="text-lg font-semibold">📞 Calling...</p>
+    <p id="calling-status" class="text-lg font-semibold">📹 Calling...</p>
     <p id="calling-type" class="text-sm text-gray-500">📹 Video Call</p>
     <div class="flex justify-center gap-4 items-center">
       <div class="flex flex-col items-center">
@@ -296,6 +290,8 @@
   </div>
 </div>
 
+<audio id="incoming-ring" src="assets/hey-there-63200.mp3" preload="auto" loop></audio>
+<audio id="outgoing-ring" src="assets/telephone-dial-and-call-ring-21151.mp3" preload="auto" loop></audio>
 
       <!-- Edit Profile -->
       <section id="profile" class="section hidden">
@@ -1062,38 +1058,42 @@ function switchSection(sectionId) {
     callSelectedName.textContent = "📞 Select a user to call";
   }
 }
+
 let peerConnection;
 let localStream;
 let remoteStream;
 let latestOffer;
-let callType = null;
+let callType = "video"; // Always video now
 
 const configuration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
 };
 
-// 📞 Start Call
-async function startCall(type) {
+// 🎥 Start Call — Caller
+async function startCall() {
   if (!currentChatTarget) return;
 
-  callType = type;
+  showCallUI("starting");
 
   try {
-    await document.getElementById("outgoing-ring").play();
+    // 🔊 Play outgoing ring (caller side)
+    const ring = document.getElementById("outgoing-ring");
+    if (ring) {
+      ring.currentTime = 0;
+      await ring.play().catch(() =>
+        console.warn("Outgoing ringtone autoplay was blocked.")
+      );
+    }
   } catch (e) {
-    console.warn("Outgoing ring failed:", e);
+    console.warn("Outgoing ringtone error:", e);
   }
 
-  showCallUI("starting", type);
-
   try {
-    // ✅ Get user media
     localStream = await navigator.mediaDevices.getUserMedia({
-      video: type === "video",
+      video: true,
       audio: true
     });
 
-    // ✅ Initialize PeerConnection and MediaStreams
     peerConnection = new RTCPeerConnection(configuration);
     remoteStream = new MediaStream();
 
@@ -1103,17 +1103,12 @@ async function startCall(type) {
     localVideo.srcObject = localStream;
     remoteVideo.srcObject = remoteStream;
 
-    // ✅ Add local tracks to peer
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-    // ✅ Add incoming remote tracks
     peerConnection.ontrack = event => {
-      event.streams[0].getTracks().forEach(track => {
-        remoteStream.addTrack(track);
-      });
+      event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
     };
 
-    // ✅ Handle ICE candidates
     peerConnection.onicecandidate = e => {
       if (e.candidate) {
         socket.emit("ice-candidate", {
@@ -1123,14 +1118,12 @@ async function startCall(type) {
       }
     };
 
-    // ✅ Set remote playback properties
     remoteVideo.muted = false;
     remoteVideo.volume = 1.0;
     remoteVideo.setSinkId?.("default").catch(err => {
       console.warn("setSinkId failed:", err);
     });
 
-    // ✅ Create and send offer
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
 
@@ -1138,7 +1131,7 @@ async function startCall(type) {
       to: currentChatTarget,
       from: email,
       offer,
-      type
+      type: "video"
     });
   } catch (error) {
     console.error("❌ Call failed to start:", error);
@@ -1147,42 +1140,32 @@ async function startCall(type) {
   }
 }
 
-// ✅ Accept Incoming Call
+// ✅ Accept Incoming Call — Callee
 async function acceptCall() {
   stopAllRings();
   hideRinger();
 
-  const constraints = {
-    video: callType === "video",
-    audio: true
-  };
-
   try {
-    // ✅ Get local media (audio & video)
-    localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
 
-    // ✅ Initialize peer connection and remote stream
     peerConnection = new RTCPeerConnection(configuration);
     remoteStream = new MediaStream();
 
     const localVideo = document.getElementById("localVideo");
     const remoteVideo = document.getElementById("remoteVideo");
 
-    // ✅ Set local and remote video sources
     localVideo.srcObject = localStream;
     remoteVideo.srcObject = remoteStream;
 
-    // ✅ Add local tracks to connection
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-    // ✅ Add remote tracks to video
     peerConnection.ontrack = event => {
-      event.streams[0].getTracks().forEach(track => {
-        remoteStream.addTrack(track);
-      });
+      event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
     };
 
-    // ✅ Handle ICE
     peerConnection.onicecandidate = e => {
       if (e.candidate) {
         socket.emit("ice-candidate", {
@@ -1192,7 +1175,6 @@ async function acceptCall() {
       }
     };
 
-    // ✅ Set offer and answer
     await peerConnection.setRemoteDescription(new RTCSessionDescription(latestOffer));
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
@@ -1202,11 +1184,8 @@ async function acceptCall() {
       answer
     });
 
-    // ✅ Unmute remote output (some browsers require this explicitly)
     remoteVideo.muted = false;
     remoteVideo.volume = 1.0;
-
-    // Optional: ensure sink to default speaker
     remoteVideo.setSinkId?.("default").catch(err => {
       console.warn("setSinkId failed:", err);
     });
@@ -1219,42 +1198,25 @@ async function acceptCall() {
   }
 }
 
-// 🧠 Helper to Setup PeerConnection
-function initPeer() {
-  peerConnection = new RTCPeerConnection(configuration);
-  remoteStream = new MediaStream();
-
-  document.getElementById("remoteVideo").srcObject = remoteStream;
-
-  peerConnection.ontrack = event => {
-    event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
-  };
-
-  peerConnection.onicecandidate = e => {
-    if (e.candidate) {
-      socket.emit("ice-candidate", {
-        to: currentChatTarget,
-        candidate: e.candidate
-      });
-    }
-  };
-}
-
-// 📥 Receive Offer
-socket.on("call-offer", ({ from, offer, type }) => {
-  stopAllRings();
+// 📥 Receive Offer — Callee
+socket.on("call-offer", ({ from, offer }) => {
   currentChatTarget = from;
   latestOffer = offer;
-  callType = type;
 
   document.getElementById("ringer").classList.remove("hidden");
-  document.getElementById("ringer-type").textContent =
-    type === "video" ? "📹 Video Call" : "📞 Audio Call";
+  document.getElementById("ringer-type").textContent = "📹 Video Call";
 
+  // 🔊 Play incoming ringtone
   try {
-    document.getElementById("incoming-ring").play();
+    const ring = document.getElementById("incoming-ring");
+    if (ring) {
+      ring.currentTime = 0;
+      ring.play().catch(() =>
+        console.warn("Incoming ringtone autoplay was blocked.")
+      );
+    }
   } catch (e) {
-    console.warn("Auto-play blocked:", e);
+    console.warn("Incoming ringtone error:", e);
   }
 });
 
@@ -1264,6 +1226,17 @@ socket.on("call-answer", async ({ answer }) => {
   await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
   showCallUI("connected");
 });
+
+// 🔇 Stop all rings (caller/callee)
+function stopAllRings() {
+  ["incoming-ring", "outgoing-ring"].forEach(id => {
+    const ring = document.getElementById(id);
+    if (ring) {
+      ring.pause();
+      ring.currentTime = 0;
+    }
+  });
+}
 
 // ❄️ ICE Candidate
 socket.on("ice-candidate", async ({ candidate }) => {
@@ -1284,7 +1257,6 @@ socket.on("call-rejected", () => {
 
 // ❌ Cancelled
 socket.on("call-cancelled", () => {
-  stopAllRings();
   hideRinger();
   resetCallUI();
   alert("❌ Caller canceled the call.");
@@ -1298,14 +1270,12 @@ socket.on("call-ended", () => {
 
 // ❌ Reject Call (manual)
 function rejectCall() {
-  stopAllRings();
   hideRinger();
   socket.emit("call-rejected", { to: currentChatTarget });
 }
 
 // 🔴 End Call
 function endCall(showAlert = true) {
-  stopAllRings();
   resetCallUI();
 
   if (peerConnection) {
@@ -1326,13 +1296,12 @@ function endCall(showAlert = true) {
   }
 
   latestOffer = null;
-  callType = null;
 
   if (showAlert) alert("🔴 Call has ended.");
 }
 
-// 🧼 Utility: Show Call UI State
-function showCallUI(state, type = null) {
+// 🧼 UI Utilities
+function showCallUI(state) {
   const callArea = document.getElementById("embedded-call-area");
   const endBtn = document.getElementById("end-call-btn");
   const callName = document.getElementById("call-selected-name");
@@ -1341,35 +1310,21 @@ function showCallUI(state, type = null) {
   endBtn.classList.remove("hidden");
 
   if (state === "starting") {
-    callName.textContent = type === "video" ? "📹 Starting Video Call..." : "📞 Starting Audio Call...";
+    callName.textContent = "📹 Starting Video Call...";
   } else if (state === "accepted" || state === "connected") {
     callName.textContent = "🔗 Call connected!";
   }
 }
 
-// 🧼 Utility: Reset Call UI
 function resetCallUI() {
   document.getElementById("embedded-call-area").classList.add("hidden");
   document.getElementById("end-call-btn").classList.add("hidden");
-  document.getElementById("call-selected-name").textContent = "📞 Select a user to call";
+  document.getElementById("call-selected-name").textContent = "📹 Select a user to video call";
 }
 
-// 🧼 Utility: Hide Ringer
 function hideRinger() {
   document.getElementById("ringer").classList.add("hidden");
 }
-
-// 🔇 Stop All Ring Tones
-function stopAllRings() {
-  ["incoming-ring", "outgoing-ring"].forEach(id => {
-    const audio = document.getElementById(id);
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
-    }
-  });
-}
-
 
 
   function toggleSidebar() {

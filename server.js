@@ -357,7 +357,6 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
-
 const onlineUsers = {}; // Track online users by email
 
 io.on("connection", (socket) => {
@@ -381,23 +380,20 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 🎥 Call Offer
-// 🎥 Call Offer
-socket.on("call-offer", async ({ to, offer, from, type }) => {
-  const recipientSocket = onlineUsers[to.toLowerCase()];
-  const caller = await User.findOne({ email: from });
+  // 🎥 Video Call Offer
+  socket.on("call-offer", async ({ to, offer, from }) => {
+    const recipientSocket = onlineUsers[to.toLowerCase()];
+    const caller = await User.findOne({ email: from });
 
-  if (recipientSocket && caller) {
-    io.to(recipientSocket).emit("call-offer", {
-      from,
-      offer,
-      type,
-      callerName: caller.profileName || caller.fullName || "Unknown",
-      callerImage: caller.image || "https://placehold.co/80"
-    });
-  }
-});
-
+    if (recipientSocket && caller) {
+      io.to(recipientSocket).emit("call-offer", {
+        from,
+        offer,
+        callerName: caller.profileName || caller.fullName || "Unknown",
+        callerImage: caller.image || "https://placehold.co/80"
+      });
+    }
+  });
 
   // ✅ Call Answer
   socket.on("call-answer", ({ to, answer }) => {
@@ -424,32 +420,30 @@ socket.on("call-offer", async ({ to, offer, from, type }) => {
     }
   });
 
-
   // 🔴 Handle call-ended
-socket.on("call-ended", ({ to }) => {
-  if (!to || typeof to !== "string") {
-    console.warn("❌ call-ended event missing 'to' or it's invalid");
-    return;
-  }
+  socket.on("call-ended", ({ to }) => {
+    if (!to || typeof to !== "string") {
+      console.warn("❌ call-ended event missing 'to' or it's invalid");
+      return;
+    }
 
-  const recipientSocket = onlineUsers[to.toLowerCase()];
-  if (recipientSocket) {
-    io.to(recipientSocket).emit("call-ended");
-    console.log(`🔴 Call ended by ${to}`);
-  } else {
-    console.warn(`⚠️ No recipient socket found for ${to}`);
-  }
-});
+    const recipientSocket = onlineUsers[to.toLowerCase()];
+    if (recipientSocket) {
+      io.to(recipientSocket).emit("call-ended");
+      console.log(`🔴 Call ended by ${to}`);
+    } else {
+      console.warn(`⚠️ No recipient socket found for ${to}`);
+    }
+  });
 
-
-// ❌ Handle call-cancelled (caller cancels before answer)
-socket.on("call-cancelled", ({ to }) => {
-  const recipientSocket = onlineUsers[to.toLowerCase()];
-  if (recipientSocket) {
-    io.to(recipientSocket).emit("call-cancelled");
-    console.log(`❌ Call cancelled to ${to}`);
-  }
-});
+  // ❌ Handle call-cancelled (caller cancels before answer)
+  socket.on("call-cancelled", ({ to }) => {
+    const recipientSocket = onlineUsers[to.toLowerCase()];
+    if (recipientSocket) {
+      io.to(recipientSocket).emit("call-cancelled");
+      console.log(`❌ Call cancelled to ${to}`);
+    }
+  });
 
   // 🚪 Clean up on disconnect
   socket.on("disconnect", () => {
@@ -462,95 +456,6 @@ socket.on("call-cancelled", ({ to }) => {
     }
   });
 });
-
-
-// 🔐 Login User
-app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
-
-    // 👇 Plain-text password match
-    if (user.password !== password) {
-      return res.status(401).json({ success: false, message: "Invalid password" });
-    }
-
-    res.json({ success: true, user });
-  } catch (err) {
-    console.error("❌ Login error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-let resetCodes = new Map();
-
-app.post("/send-reset-code", async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ success: false });
-
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ success: false, message: "Email not found." });
-
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  resetCodes.set(email, code);
-
-  try {
-    await transporter.sendMail({
-      from: `LoveConnect <${EMAIL_USER}>`,
-      to: email,
-      subject: "Reset Your Password",
-      text: `Your password reset code is: ${code}`
-    });
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Reset email error:", err);
-    res.status(500).json({ success: false });
-  }
-});
-
-app.post("/verify-reset-code", async (req, res) => {
-  const { email, code, newPassword } = req.body;
-  if (resetCodes.get(email) !== code) {
-    return res.status(401).json({ success: false, message: "Invalid code." });
-  }
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false });
-
-    user.password = newPassword;
-    await user.save();
-
-    resetCodes.delete(email);
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Password reset failed:", err);
-    res.status(500).json({ success: false });
-  }
-});
-
-
-// Example Express route (server.js or routes/message.js)
-app.get("/messages/:user1/:user2", async (req, res) => {
-  const { user1, user2 } = req.params;
-  try {
-    const messages = await Message.find({
-      $or: [
-        { from: user1, to: user2 },
-        { from: user2, to: user1 }
-      ]
-    }).sort({ timestamp: 1 });
-
-    res.json(messages);
-  } catch (err) {
-    console.error("❌ Error fetching messages:", err);
-    res.status(500).json({ error: "Failed to fetch messages" });
-  }
-});
-
 
 // 🚀 Start server
 server.listen(PORT, () => {
