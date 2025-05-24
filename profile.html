@@ -48,8 +48,8 @@
   async function loadUserProfile(userId) {
     try {
       const [userRes, currentRes] = await Promise.all([
-        fetch(`https://loveandbabes.onrender.com/user/by-id/${userId}`),
-        currentUserEmail ? fetch(`https://loveandbabes.onrender.com/user/${currentUserEmail}`) : Promise.resolve({ ok: true, json: () => ({}) })
+        fetch(`http://localhost:3000/user/by-id/${userId}`),
+        currentUserEmail ? fetch(`http://localhost:3000/user/${currentUserEmail}`) : Promise.resolve({ ok: true, json: () => ({}) })
       ]);
 
       if (!userRes.ok) throw new Error("User not found");
@@ -152,7 +152,7 @@
   likeBtn.textContent = "💖 Liking...";
 
   try {
-    const res = await fetch("https://loveandbabes.onrender.com/user/like", {
+    const res = await fetch("http://localhost:3000/user/like", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ liker: currentUserEmail, liked: targetEmail })
@@ -200,7 +200,7 @@ function goToMatch() {
 
   async function loadUserGallery(userId) {
     try {
-      const res = await fetch(`https://loveandbabes.onrender.com/user/gallery/by-id/${userId}`);
+      const res = await fetch(`http://localhost:3000/user/gallery/by-id/${userId}`);
       const gallery = await res.json();
 
       if (!gallery.length) {

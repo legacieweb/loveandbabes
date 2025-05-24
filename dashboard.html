@@ -1077,6 +1077,7 @@ async function startCall(type) {
   if (!currentChatTarget) return;
 
   callType = type;
+
   try {
     await document.getElementById("outgoing-ring").play();
   } catch (e) {
@@ -1086,17 +1087,50 @@ async function startCall(type) {
   showCallUI("starting", type);
 
   try {
+    // ✅ Get user media
     localStream = await navigator.mediaDevices.getUserMedia({
       video: type === "video",
       audio: true
     });
 
-    initPeer();
+    // ✅ Initialize PeerConnection and MediaStreams
+    peerConnection = new RTCPeerConnection(configuration);
+    remoteStream = new MediaStream();
 
+    const localVideo = document.getElementById("localVideo");
+    const remoteVideo = document.getElementById("remoteVideo");
+
+    localVideo.srcObject = localStream;
+    remoteVideo.srcObject = remoteStream;
+
+    // ✅ Add local tracks to peer
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-    document.getElementById("localVideo").srcObject = localStream;
-    document.getElementById("remoteVideo").srcObject = new MediaStream();
 
+    // ✅ Add incoming remote tracks
+    peerConnection.ontrack = event => {
+      event.streams[0].getTracks().forEach(track => {
+        remoteStream.addTrack(track);
+      });
+    };
+
+    // ✅ Handle ICE candidates
+    peerConnection.onicecandidate = e => {
+      if (e.candidate) {
+        socket.emit("ice-candidate", {
+          to: currentChatTarget,
+          candidate: e.candidate
+        });
+      }
+    };
+
+    // ✅ Set remote playback properties
+    remoteVideo.muted = false;
+    remoteVideo.volume = 1.0;
+    remoteVideo.setSinkId?.("default").catch(err => {
+      console.warn("setSinkId failed:", err);
+    });
+
+    // ✅ Create and send offer
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
 
@@ -1107,7 +1141,8 @@ async function startCall(type) {
       type
     });
   } catch (error) {
-    console.error("Call failed to start:", error);
+    console.error("❌ Call failed to start:", error);
+    alert("Could not access camera or mic. Please check your browser permissions.");
     endCall(false);
   }
 }
@@ -1123,13 +1158,42 @@ async function acceptCall() {
   };
 
   try {
+    // ✅ Get local media (audio & video)
     localStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-    initPeer();
+    // ✅ Initialize peer connection and remote stream
+    peerConnection = new RTCPeerConnection(configuration);
+    remoteStream = new MediaStream();
+
+    const localVideo = document.getElementById("localVideo");
+    const remoteVideo = document.getElementById("remoteVideo");
+
+    // ✅ Set local and remote video sources
+    localVideo.srcObject = localStream;
+    remoteVideo.srcObject = remoteStream;
+
+    // ✅ Add local tracks to connection
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(latestOffer));
+    // ✅ Add remote tracks to video
+    peerConnection.ontrack = event => {
+      event.streams[0].getTracks().forEach(track => {
+        remoteStream.addTrack(track);
+      });
+    };
 
+    // ✅ Handle ICE
+    peerConnection.onicecandidate = e => {
+      if (e.candidate) {
+        socket.emit("ice-candidate", {
+          to: currentChatTarget,
+          candidate: e.candidate
+        });
+      }
+    };
+
+    // ✅ Set offer and answer
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(latestOffer));
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
 
@@ -1138,9 +1202,19 @@ async function acceptCall() {
       answer
     });
 
+    // ✅ Unmute remote output (some browsers require this explicitly)
+    remoteVideo.muted = false;
+    remoteVideo.volume = 1.0;
+
+    // Optional: ensure sink to default speaker
+    remoteVideo.setSinkId?.("default").catch(err => {
+      console.warn("setSinkId failed:", err);
+    });
+
     showCallUI("accepted");
-  } catch (e) {
-    console.error("Failed to accept call:", e);
+  } catch (err) {
+    console.error("❌ Failed to accept call:", err);
+    alert("Could not access your camera or mic. Please check browser settings.");
     endCall();
   }
 }

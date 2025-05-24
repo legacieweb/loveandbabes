@@ -62,7 +62,7 @@ async function sendResetCode() {
   }
 
   try {
-    const res = await fetch("https://loveandbabes.onrender.com/send-reset-code", {
+    const res = await fetch("http://localhost:3000/send-reset-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email })
@@ -92,7 +92,7 @@ async function submitReset() {
   }
 
   try {
-    const res = await fetch("https://loveandbabes.onrender.com/verify-reset-code", {
+    const res = await fetch("http://localhost:3000/verify-reset-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, code, newPassword: password })
@@ -126,7 +126,7 @@ async function submitReset() {
     }
 
     try {
-      const res = await fetch("https://loveandbabes.onrender.com/login", {
+      const res = await fetch("http://localhost:3000/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
