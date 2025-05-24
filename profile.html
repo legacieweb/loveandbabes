@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Profile - LoveConnect</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-pink-50 text-gray-800 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white shadow sticky top-0 z-10">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold text-pink-600">LoveConnect ❤️</h1>
+      <a href="dashboard.html" class="text-sm text-pink-500 hover:underline">← Back to Dashboard</a>
+    </div>
+  </header>
+
+  <!-- Profile -->
+  <main class="container mx-auto px-4 py-8 max-w-3xl">
+    <div id="profile-container" class="bg-white p-6 rounded shadow space-y-4 text-center">
+      <p class="text-gray-500">Loading profile...</p>
+    </div>
+
+    <!-- Gallery -->
+    <div id="gallery-section" class="mt-8">
+      <h2 class="text-lg font-semibold text-pink-600 mb-3">📸 Gallery</h2>
+      <div id="gallery-content" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
+    </div>
+  </main>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const userId = params.get("id");
+  const currentUserEmail = localStorage.getItem("user_email");
+  const likedBeforeSignup = localStorage.getItem("liked_before_signup");
+
+  let targetUser = null;
+  let currentUser = null;
+
+  if (!userId) {
+    document.getElementById("profile-container").innerHTML = "<p class='text-red-500'>❌ No user ID provided.</p>";
+  } else {
+    loadUserProfile(userId);
+    loadUserGallery(userId);
+  }
+
+  async function loadUserProfile(userId) {
+    try {
+      const [userRes, currentRes] = await Promise.all([
+        fetch(`http://localhost:3000/user/by-id/${userId}`),
+        currentUserEmail ? fetch(`http://localhost:3000/user/${currentUserEmail}`) : Promise.resolve({ ok: true, json: () => ({}) })
+      ]);
+
+      if (!userRes.ok) throw new Error("User not found");
+      targetUser = await userRes.json();
+      currentUser = currentRes.ok ? await currentRes.json() : {};
+
+      const age = targetUser.year ? new Date().getFullYear() - targetUser.year : "N/A";
+      const location = [targetUser.district, targetUser.state, targetUser.country].filter(Boolean).join(", ") || "Unknown";
+
+      const canLike = currentUser?.userId || !currentUserEmail;
+
+      document.getElementById("profile-container").innerHTML = `
+        <img src="${targetUser.image || 'https://placehold.co/200'}" 
+             class="w-32 h-32 object-cover rounded-full mx-auto border-2 border-pink-300 mb-3 shadow" />
+        <h2 class="text-xl font-bold">${targetUser.profileName || 'Unnamed'}, 
+          <span class="text-sm text-gray-500">${age}</span>
+        </h2>
+        <p class="text-sm text-gray-600 italic mb-2">${location}</p>
+        <p class="text-gray-700 mb-3">${targetUser.bio || 'No bio provided.'}</p>
+
+        <div class="grid grid-cols-2 gap-4 text-left text-sm text-gray-700 mt-4">
+          <p><strong>Gender:</strong> ${targetUser.gender || '-'}</p>
+          <p><strong>Orientation:</strong> ${targetUser.orientation || '-'}</p>
+          <p><strong>Relationship Type:</strong> ${targetUser.relationshipType || '-'}</p>
+          <p><strong>Sexual Preference:</strong> ${targetUser.sexualPreference || '-'}</p>
+          <p><strong>Smoke:</strong> ${targetUser.smoke || '-'}</p>
+          <p><strong>Drink:</strong> ${targetUser.drink || '-'}</p>
+          <p><strong>Love Language:</strong> ${targetUser.loveLanguage || '-'}</p>
+        </div>
+
+<div class="mt-6 flex flex-col items-center space-y-2">
+  <button 
+    id="like-btn"
+    data-allow="${canLike}" 
+    onclick="likeUserProfile('${targetUser.email}')"
+    class="px-5 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition"
+  >
+    💖 Like
+  </button>
+  <button 
+    id="match-btn"
+    class="hidden px-5 py-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition"
+    onclick="goToMatch()"
+  >
+    🎉 It's a Match! Start Chatting
+  </button>
+</div>
+
+      `;
+
+      if (currentUserEmail && currentUser?.userId) {
+        checkMatchStatus(targetUser.email);
+      }
+
+    } catch (err) {
+      console.error("❌ Error loading profile:", err);
+      document.getElementById("profile-container").innerHTML =
+        "<p class='text-red-500'>❌ Failed to load profile. Please check the user ID or try again later.</p>";
+    }
+  }
+
+  async function checkMatchStatus(otherEmail) {
+    try {
+      const matchBtn = document.getElementById("match-btn");
+      const likeBtn = document.getElementById("like-btn");
+
+      const alreadyLiked = currentUser.likes?.includes(otherEmail);
+      const matched = currentUser.matches?.includes(otherEmail);
+
+      if (matched) {
+        matchBtn.classList.remove("hidden");
+        likeBtn?.classList.add("hidden");
+      } else if (alreadyLiked) {
+        likeBtn.disabled = true;
+        likeBtn.textContent = "❤️ Already Liked";
+      }
+    } catch (err) {
+      console.error("❌ Error checking match:", err);
+    }
+  }
+
+  async function likeUserProfile(targetEmail) {
+  const likeBtn = document.getElementById("like-btn");
+
+  // Guest user → store and redirect
+  if (!currentUserEmail) {
+    localStorage.setItem("liked_email", targetEmail);
+    localStorage.setItem("liked_before_signup", "1");
+    window.location.href = "signup.html";
+    return;
+  }
+
+  // ❌ Logged-in user without verification (no userId)
+  if (!currentUser?.userId) {
+    alert("❌ You must verify your account ID before liking profiles.");
+    return;
+  }
+
+  likeBtn.disabled = true;
+  likeBtn.textContent = "💖 Liking...";
+
+  try {
+    const res = await fetch("http://localhost:3000/user/like", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ liker: currentUserEmail, liked: targetEmail })
+    });
+
+    const data = await res.json();
+
+    if (data.match) {
+      document.getElementById("match-btn").classList.remove("hidden");
+      likeBtn.classList.add("hidden");
+    } else {
+      likeBtn.textContent = "❤️ Liked";
+    }
+
+  } catch (err) {
+    console.error("❌ Like failed:", err);
+    likeBtn.disabled = false;
+    likeBtn.textContent = "💖 Like";
+  }
+}
+
+
+function goToMatch() {
+  if (targetUser?.email) {
+    localStorage.setItem("chat_target_email", targetUser.email);
+  }
+
+  // Open chat modal
+  document.getElementById("chat-modal").classList.remove("hidden");
+  document.getElementById("chat-modal").classList.add("flex");
+
+  // Load matches
+  checkChatAccess();
+
+  // Wait a moment and start chat
+  setTimeout(() => {
+    if (targetUser?.email) {
+      startChat(targetUser.email, targetUser.profileName || targetUser.fullName || "Match");
+      localStorage.removeItem("chat_target_email");
+    }
+  }, 500); // allow matches to load first
+
+  alert("🎉 It's a Match! Starting chat...");
+}
+
+  async function loadUserGallery(userId) {
+    try {
+      const res = await fetch(`http://localhost:3000/user/gallery/by-id/${userId}`);
+      const gallery = await res.json();
+
+      if (!gallery.length) {
+        document.getElementById("gallery-content").innerHTML = "<p class='text-gray-500 col-span-full'>No media uploaded yet.</p>";
+        return;
+      }
+
+      document.getElementById("gallery-content").innerHTML = gallery.map(item => {
+        const isVideo = item.endsWith(".mp4") || item.endsWith(".webm") || item.includes("video");
+        return isVideo
+          ? `<video controls class="w-full h-40 object-cover rounded shadow"><source src="${item}" type="video/mp4"></video>`
+          : `<img src="${item}" class="w-full h-40 object-cover rounded shadow" />`;
+      }).join('');
+    } catch (err) {
+      console.error("❌ Gallery error:", err);
+      document.getElementById("gallery-content").innerHTML = "<p class='text-red-500'>❌ Failed to load gallery.</p>";
+    }
+  }
+</script>
+
+
+</body>
+</html>

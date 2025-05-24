@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Panel - LoveConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <header class="bg-white shadow p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-pink-600">LoveConnect Admin 👑</h1>
+    <button onclick="loadUsers()" class="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600">🔄 Refresh</button>
+  </header>
+
+  <main class="p-6">
+    <h2 class="text-2xl font-semibold mb-4">Pending Verifications</h2>
+
+    <div class="mb-4">
+      <input type="text" id="search" placeholder="Search by email or name..." class="w-full p-2 border rounded" oninput="filterUsers()" />
+    </div>
+
+    <div id="user-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </main>
+
+  <script>
+    let allUsers = [];
+
+    async function loadUsers() {
+      try {
+        const res = await fetch("http://localhost:3000/admin/unverified-users");
+        allUsers = await res.json();
+        displayUsers(allUsers);
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+        document.getElementById("user-list").innerHTML = "<p class='text-red-500'>Failed to load users.</p>";
+      }
+    }
+
+    function displayUsers(users) {
+      const container = document.getElementById("user-list");
+      if (!users.length) {
+        container.innerHTML = "<p class='text-gray-500 col-span-full'>No unverified users.</p>";
+        return;
+      }
+
+      container.innerHTML = users.map(user => `
+        <div class="bg-white p-4 rounded shadow-md space-y-3">
+          <div class="flex items-center gap-4">
+            <img src="${user.image || 'https://placehold.co/100'}" class="w-16 h-16 rounded-full object-cover border" />
+            <div>
+              <h3 class="font-semibold">${user.profileName || 'No name'}</h3>
+              <p class="text-sm text-gray-500">${user.email}</p>
+            </div>
+          </div>
+
+          <input type="text" id="id-${user._id}" placeholder="Assign User ID" class="w-full p-2 border rounded" />
+
+          <button onclick="verifyUser('${user._id}')" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+            ✅ Verify and Assign ID
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function verifyUser(id) {
+      const userId = document.getElementById(`id-${id}`).value.trim();
+      if (!userId) return alert("Please enter a valid User ID");
+
+      try {
+        const res = await fetch("http://localhost:3000/admin/verify-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ _id: id, userId })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          alert("✅ User verified and ID assigned.");
+          loadUsers();
+        } else {
+          alert("❌ Failed to verify user.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("❌ Server error.");
+      }
+    }
+
+    function filterUsers() {
+      const term = document.getElementById("search").value.toLowerCase();
+      const filtered = allUsers.filter(u =>
+        u.email.toLowerCase().includes(term) ||
+        (u.profileName || "").toLowerCase().includes(term)
+      );
+      displayUsers(filtered);
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>

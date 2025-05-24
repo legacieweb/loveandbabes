@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - LoveConnect</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Header -->
+  <header class="bg-white shadow sticky top-0 z-10">
+    <div class="flex justify-between items-center px-4 sm:px-6 py-4">
+      <h1 class="text-2xl font-bold text-pink-600">LoveConnect ❤️</h1>
+      <div class="md:hidden">
+        <button onclick="toggleSidebar()" class="text-pink-600 text-xl">☰</button>
+      </div>
+      <button onclick="logout()" class="hidden md:inline text-sm text-gray-600 hover:text-red-600">Logout</button>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <div class="flex flex-col md:flex-row min-h-screen">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-white border-r shadow-md p-4 space-y-3 hidden md:block md:w-64">
+      <nav class="flex flex-col space-y-3">
+        <button onclick="switchSection('explore')" class="nav-btn text-left">🧭 Explore</button>
+       <button onclick="switchSection('likes')" class="nav-btn text-left">❤️ Likes</button>
+       <button onclick="switchSection('messages')" class="nav-btn text-left">💌 Messages</button>
+      <button onclick="switchSection('calls')" class="nav-btn text-left">📞 Calls</button>
+        <button onclick="switchSection('profile')" class="nav-btn text-left">⚙️ Edit Profile</button>
+        <button onclick="switchSection('gallery')" class="nav-btn text-left">📸 My Gallery</button>
+        <button onclick="logout()" class="text-sm text-red-500 hover:underline md:hidden">Logout</button>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 p-4 sm:p-6 space-y-6">
+
+<!-- Explore -->
+<section id="explore" class="section hidden animate-fade-in-up">
+  <h2 class="text-2xl font-bold mb-6 text-pink-600">🧭 Explore Matches</h2>
+
+  <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 transition-all duration-300 ease-in-out">
+    <input id="filter-location" type="text" placeholder="Location" class="border p-2 rounded shadow-sm focus:ring-2 focus:ring-pink-300" />
+    <input id="filter-min-age" type="number" placeholder="Min Age" class="border p-2 rounded shadow-sm focus:ring-2 focus:ring-pink-300" />
+    <input id="filter-max-age" type="number" placeholder="Max Age" class="border p-2 rounded shadow-sm focus:ring-2 focus:ring-pink-300" />
+
+    <select id="filter-gender" class="border p-2 rounded shadow-sm focus:ring-2 focus:ring-pink-300">
+      <option value="">Gender</option>
+      <option>Female</option>
+      <option>Male</option>
+      <option>Non-Binary</option>
+      <option>Transgender</option>
+      <option>Genderqueer</option>
+      <option>Agender</option>
+      <option>Two-Spirit</option>
+      <option>Other</option>
+      <option>Prefer not to say</option>
+    </select>
+    <select id="filter-relationshipType" class="border p-2 rounded shadow-sm focus:ring-2 focus:ring-pink-300">
+      <option value="">Relationship Type</option>
+      <option>Looking for a serious relationship 💍</option>
+      <option>Something casual but meaningful 🤝</option>
+      <option>Just friends (or... maybe more 😉)</option>
+      <option>Open relationship / ethically non-monogamous 🔄</option>
+      <option>Here for a good time, not a long time 😏</option>
+      <option>One-night stand, being honest about it 🌙🔥</option>
+      <option>Friends with benefits 🍑</option>
+      <option>No strings attached 🚫🎭</option>
+      <option>Let’s vibe and see what happens 🎶</option>
+      <option>I’m just bored and curious 👀</option>
+      <option>Prefer not to say 🙊</option>
+    </select>
+
+    <select id="filter-orientation" class="border p-2 rounded shadow-sm focus:ring-2 focus:ring-pink-300">
+      <option value="">Orientation</option>
+      <option>Straight</option>
+      <option>Gay</option>
+      <option>Lesbian</option>
+      <option>Bisexual</option>
+      <option>Pansexual</option>
+      <option>Asexual</option>
+      <option>Queer</option>
+      <option>Questioning</option>
+    </select>
+
+    <select id="filter-sexualPreference" class="border p-2 rounded shadow-sm focus:ring-2 focus:ring-pink-300">
+      <option value="">Sexual Preference</option>
+      <option>Romantic and sensual</option>
+      <option>Kinky / BDSM</option>
+      <option>Dominant</option>
+      <option>Submissive</option>
+      <option>Experimenting</option>
+      <option>Open to fantasies</option>
+      <option>Prefer not to say</option>
+    </select>
+
+    <select id="filter-smoke" class="border p-2 rounded shadow-sm focus:ring-2 focus:ring-pink-300">
+      <option value="">Smoke</option>
+      <option>No</option>
+      <option>Occasionally</option>
+      <option>Yes</option>
+      <option>Trying to quit</option>
+    </select>
+
+    <select id="filter-drink" class="border p-2 rounded shadow-sm focus:ring-2 focus:ring-pink-300">
+      <option value="">Drink</option>
+      <option>No</option>
+      <option>Socially</option>
+      <option>Frequently</option>
+      <option>Prefer not to say</option>
+    </select>
+
+    <select id="filter-loveLanguage" class="border p-2 rounded shadow-sm focus:ring-2 focus:ring-pink-300">
+      <option value="">Love Language</option>
+      <option>Words of affirmation</option>
+      <option>Physical touch</option>
+      <option>Quality time</option>
+      <option>Acts of service</option>
+      <option>Gift-giving</option>
+    </select>
+  </div>
+
+  <div class="mb-6 text-center">
+    <button onclick="applyFilters()" class="inline-block px-6 py-2 bg-pink-600 text-white rounded-lg shadow hover:bg-pink-700 transition">🔍 Apply Filters</button>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-300" id="explore-cards">
+    <!-- Dynamic cards rendered here -->
+  </div>
+</section>
+
+
+
+
+
+<style>
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out;
+  }
+  @keyframes fadeInUp {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+
+
+<!-- Likes -->
+<section id="likes" class="section hidden animate-fade-in-up">
+  <h2 class="text-2xl font-bold mb-6 text-pink-600">❤️ Likes</h2>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    
+    <!-- You Liked -->
+    <div class="bg-white rounded-lg shadow p-5">
+      <h3 class="text-lg font-semibold text-pink-500 mb-4">People You Liked</h3>
+      <ul id="you-liked" class="space-y-3">
+        <li class="text-gray-400">Loading...</li>
+      </ul>
+    </div>
+
+    <!-- Liked You -->
+    <div class="bg-white rounded-lg shadow p-5">
+      <h3 class="text-lg font-semibold text-pink-500 mb-4">People Who Liked You</h3>
+      <ul id="liked-you" class="space-y-3">
+        <li class="text-gray-400">Loading...</li>
+      </ul>
+    </div>
+    
+  </div>
+</section>
+
+<!-- 💌 Messages Section -->
+<section id="messages" class="section hidden animate-fade-in-up">
+  <div class="bg-white rounded-xl shadow-lg w-full max-w-6xl mx-auto h-[85vh] flex flex-col md:flex-row overflow-hidden relative">
+    
+    <!-- 💑 Match List -->
+    <aside class="w-full md:w-1/3 bg-gray-50 border-r p-4 overflow-y-auto">
+      <h3 class="text-lg font-semibold mb-4 text-pink-600">💖 Your Matches</h3>
+      <div class="space-y-3" id="message-user-list">
+        <p class="text-sm text-gray-400">Loading matches...</p>
+      </div>
+    </aside>
+
+    <!-- 💬 Message Panel -->
+    <div class="flex-1 flex flex-col p-4 overflow-hidden">
+      <div id="message-header" class="text-lg font-semibold text-pink-600 mb-3">
+        Select a user to chat
+      </div>
+      <div id="message-box" class="flex-1 bg-gray-50 border rounded-lg p-4 overflow-y-auto space-y-2 shadow-inner">
+        <p class="text-gray-400 italic">💬 No conversation selected.</p>
+      </div>
+      <div class="mt-4 flex items-center gap-2">
+        <input id="message-input" type="text" placeholder="Type a message..."
+          class="flex-1 border rounded-full px-4 py-2 shadow-sm focus:ring-2 focus:ring-pink-400 outline-none disabled:opacity-50"
+          disabled />
+        <button id="message-send-btn" onclick="sendMessage()"
+          class="px-5 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition disabled:opacity-50"
+          disabled>
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 📞 Calls Section -->
+<!-- 📞 Calls Section -->
+<section id="calls" class="section hidden animate-fade-in-up">
+  <div class="bg-white rounded-xl shadow-lg w-full max-w-5xl mx-auto h-[80vh] flex">
+    
+    <!-- 💑 Matches for Call -->
+    <aside class="w-1/2 p-4 border-r bg-gray-50 overflow-y-auto">
+      <h3 class="text-lg font-semibold mb-4 text-pink-600">📇 Call Matches</h3>
+      <div class="space-y-3" id="call-user-list">
+        <p class="text-sm text-gray-400">🔍 Finding users you can call...</p>
+      </div>
+    </aside>
+
+    <!-- 📞 Call Panel -->
+    <div class="w-1/2 p-4 flex flex-col space-y-4 items-center justify-between">
+      <div class="text-center w-full">
+        <div id="call-selected-name" class="text-lg font-semibold text-pink-600 mb-4">
+          📞 Select a user to call
+        </div>
+
+        <!-- Controls -->
+        <div class="flex gap-6 justify-center mb-2">
+          <button id="call-video-btn" onclick="startCall('video')" class="bg-pink-500 text-white px-5 py-3 rounded-full text-xl hover:bg-pink-600 transition disabled:opacity-50" disabled>🎥</button>
+          <button id="call-audio-btn" onclick="startCall('audio')" class="bg-blue-500 text-white px-5 py-3 rounded-full text-xl hover:bg-blue-600 transition disabled:opacity-50" disabled>📞</button>
+        </div>
+
+        <!-- End Call Button -->
+        <button id="end-call-btn" onclick="endCall()" class="hidden mt-2 px-5 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+          🔴 End Call
+        </button>
+      </div>
+
+      <!-- Embedded Video/Audio Streams -->
+      <div id="embedded-call-area" class="w-full hidden">
+        <div class="flex gap-4 justify-center">
+          <video id="localVideo" autoplay muted playsinline class="w-1/2 h-40 rounded-lg shadow"></video>
+          <video id="remoteVideo" autoplay playsinline class="w-1/2 h-40 rounded-lg shadow"></video>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 🔊 Ringing Audio -->
+<audio id="incoming-ring" src="assets/hey-there-63200.mp3" preload="auto" loop></audio>
+<audio id="outgoing-ring" src="assets/telephone-dial-and-call-ring-21151.mp3" preload="auto" loop></audio>
+
+<!-- Incoming Call Ringer -->
+<div id="ringer" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center hidden z-50">
+  <div class="bg-white rounded-lg p-6 shadow space-y-4 text-center">
+    <img id="ringer-image" src="https://placehold.co/80" class="w-20 h-20 rounded-full mx-auto object-cover" />
+    <h3 id="ringer-name" class="text-lg font-semibold">📞 Incoming Call</h3>
+    <p id="ringer-type" class="text-sm text-gray-500">📞 Audio Call</p>
+    <div class="flex justify-center gap-4 mt-4">
+      <button onclick="acceptCall()" class="px-4 py-2 bg-green-500 text-white rounded-full hover:bg-green-600">✅ Accept</button>
+      <button onclick="rejectCall()" class="px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600">❌ Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- Calling Overlay -->
+<div id="calling-overlay" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center hidden z-50">
+  <div class="bg-white rounded-lg p-6 shadow-lg text-center space-y-4 max-w-sm">
+    <p id="calling-status" class="text-lg font-semibold">📞 Calling...</p>
+    <p id="calling-type" class="text-sm text-gray-500">📹 Video Call</p>
+    <div class="flex justify-center gap-4 items-center">
+      <div class="flex flex-col items-center">
+        <img id="caller-img" src="https://placehold.co/80" class="w-16 h-16 rounded-full object-cover" />
+        <p class="text-xs text-gray-500">You</p>
+      </div>
+      <div class="flex flex-col items-center">
+        <img id="callee-img" src="https://placehold.co/80" class="w-16 h-16 rounded-full object-cover" />
+        <p class="text-xs text-gray-500">Them</p>
+      </div>
+    </div>
+    <div class="flex justify-center gap-4 mt-4">
+      <button id="cancel-call-btn" onclick="endCall()" class="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+        ❌ Cancel Call
+      </button>
+    </div>
+  </div>
+</div>
+
+
+      <!-- Edit Profile -->
+      <section id="profile" class="section hidden">
+        <h2 class="text-xl font-semibold mb-4">Edit Profile</h2>
+        <div id="profile-data" class="bg-white rounded-lg shadow p-6 space-y-3">
+          <p>Loading...</p>
+        </div>
+      </section>
+
+
+<!-- Gallery -->
+<section id="gallery" class="section hidden">
+  <h2 class="text-2xl font-bold text-pink-600 mb-6">My Gallery</h2>
+
+  <div class="bg-white rounded-lg shadow p-6 space-y-4">
+
+    <!-- File Input -->
+    <div class="flex items-center justify-between">
+      <label for="uploadImg" class="cursor-pointer bg-pink-100 text-pink-700 px-4 py-2 rounded hover:bg-pink-200 transition shadow-sm">
+        + Select Images
+      </label>
+      <input type="file" id="uploadImg" class="hidden" multiple accept="image/*" onchange="previewSelectedImages()" />
+    </div>
+
+    <!-- Image Preview Grid -->
+    <div id="preview-container" class="grid grid-cols-2 md:grid-cols-3 gap-4 hidden">
+      <!-- JS Injects Previews Here -->
+    </div>
+
+    <!-- Upload Button -->
+    <div id="upload-controls" class="hidden text-right pt-2">
+      <button onclick="uploadImages()" class="inline-block px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 shadow transition">
+        🚀 Upload to Gallery
+      </button>
+    </div>
+  </div>
+
+  <!-- Displayed Gallery Images -->
+  <div class="mt-8">
+    <h3 class="text-lg font-semibold text-gray-700 mb-3">Your Media</h3>
+    <div id="my-gallery" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <!-- JS will inject actual images here -->
+    </div>
+  </div>
+</section>
+
+    </main>
+
+
+<script>
+  
+  const email = localStorage.getItem("user_email");
+  if (!email) window.location.href = "login.html";
+
+document.addEventListener('click', () => {
+  const incoming = document.getElementById("incoming-ring");
+  const outgoing = document.getElementById("outgoing-ring");
+
+  incoming.load(); // warm up without playing
+  outgoing.load(); // warm up without playing
+}, { once: true });
+
+
+const socket = io("http://localhost:3000");
+
+// 🔐 Register user immediately after socket connects
+socket.on("connect", () => {
+  socket.emit("register", email);
+  console.log("✅ Registered with socket:", email);
+});
+
+
+  let user = {};
+async function loadUserData() {
+  try {
+    const res = await fetch(`http://localhost:3000/user/${email}`);
+    user = await res.json();
+let latestOffer = null;
+
+    const hasUserId = !!user.userId;
+    let callType = null; // "video" or "audio"
+
+
+    document.getElementById("profile-data").innerHTML = `
+      <form id="edit-profile-form" class="space-y-4">
+        <div class="flex flex-col items-center">
+          <img id="profile-image-preview" src="${user.image || 'https://placehold.co/100'}" class="w-32 h-32 object-cover rounded-full mb-2" />
+          <input type="file" id="profile-image" accept="image/*" class="text-sm" />
+        </div>
+
+        <div class="text-sm text-gray-700 font-semibold">
+          <strong>User ID:</strong> <span id="user-id-display">${user.userId || 'Not generated'}</span>
+        </div>
+
+        ${!hasUserId ? `
+        <div class="space-y-2" id="id-verification-section">
+          <button type="button" id="get-id-btn" onclick="requestUserIdCode()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Get My ID</button>
+          <input id="id-code-input" type="text" maxlength="6" placeholder="Enter verification code" class="w-full border p-2 rounded hidden mt-2" />
+          <button type="button" onclick="verifyAndGenerateId()" id="verify-id-btn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 hidden">Verify & Generate ID</button>
+          <p id="id-status" class="text-sm text-gray-500 mt-1"></p>
+        </div>
+        ` : ""}
+
+        <label>Profile Name</label>
+        <input type="text" name="profileName" value="${user.profileName || ''}" class="w-full border p-2 rounded" />
+
+        <label>Full Name</label>
+        <input type="text" name="fullName" value="${user.fullName || ''}" class="w-full border p-2 rounded" />
+
+        <label>Email</label>
+        <input type="email" value="${user.email}" disabled class="w-full border p-2 rounded" />
+
+        <label>Year of Birth</label>
+        <input type="number" name="year" value="${user.year || ''}" class="w-full border p-2 rounded" />
+
+        <label>Bio</label>
+        <textarea name="bio" class="w-full border p-2 rounded">${user.bio || ''}</textarea>
+
+        <label>Country</label>
+        <input type="text" name="country" value="${user.country || ''}" class="w-full border p-2 rounded" />
+
+        <label>State / Region</label>
+        <input type="text" name="state" value="${user.state || ''}" class="w-full border p-2 rounded" />
+
+        <label>City / District</label>
+        <input type="text" name="district" value="${user.district || ''}" class="w-full border p-2 rounded" />
+
+        <label>Gender</label>
+        <select name="gender" class="w-full border p-2 rounded">
+          <option selected>${user.gender || 'Gender'}</option>
+        </select>
+
+        <label>Relationship Type</label>
+        <select name="relationshipType" class="w-full border p-2 rounded">
+          <option selected>${user.relationshipType || 'Relationship Type'}</option>
+        </select>
+
+        <label>Orientation</label>
+        <select name="orientation" class="w-full border p-2 rounded">
+          <option selected>${user.orientation || 'Orientation'}</option>
+        </select>
+
+        <label>Sexual Preference</label>
+        <select name="sexualPreference" class="w-full border p-2 rounded">
+          <option selected>${user.sexualPreference || 'Sexual Preference'}</option>
+        </select>
+
+        <label>Smoking Status</label>
+        <select name="smoke" class="w-full border p-2 rounded">
+          <option selected>${user.smoke || 'Smoking Status'}</option>
+        </select>
+
+        <label>Drinking Status</label>
+        <select name="drink" class="w-full border p-2 rounded">
+          <option selected>${user.drink || 'Drinking Status'}</option>
+        </select>
+
+        <label>Love Language</label>
+        <select name="loveLanguage" class="w-full border p-2 rounded">
+          <option selected>${user.loveLanguage || 'Love Language'}</option>
+        </select>
+
+        <button type="submit" class="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600">
+          Save Changes
+        </button>
+      </form>
+    `;
+
+    // Submit handler
+    document.getElementById("edit-profile-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+
+      const imageFile = document.getElementById("profile-image").files[0];
+      let base64Image = user.image;
+
+      if (imageFile) {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          base64Image = reader.result;
+          await sendProfileUpdate(formData, base64Image);
+        };
+        reader.readAsDataURL(imageFile);
+      } else {
+        await sendProfileUpdate(formData, base64Image);
+      }
+    });
+
+  } catch (err) {
+    console.error("User data failed to load", err);
+    document.getElementById("profile-data").innerHTML = `<p class="text-red-500">Failed to load profile.</p>`;
+  }
+}
+
+async function sendProfileUpdate(formData, base64Image) {
+  const updatedUser = {
+    email: user.email,
+    image: base64Image
+  };
+
+  for (const [key, value] of formData.entries()) {
+    updatedUser[key] = value;
+  }
+
+  try {
+    const res = await fetch("http://localhost:3000/user/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedUser)
+    });
+
+    const result = await res.json();
+    if (result.success) {
+      alert("✅ Profile updated successfully!");
+      loadUserData(); // reload updated profile
+    } else {
+      alert("❌ Failed to update profile.");
+    }
+  } catch (err) {
+    console.error("Profile update error:", err);
+    alert("❌ Server error while updating profile.");
+  }
+}
+
+async function uploadImages() {
+  const fileInput = document.getElementById("uploadImg");
+  const files = fileInput.files;
+
+  if (user.accountType !== 'premium' && files.length > 5) {
+    openSubscriptionModal();
+    return;
+  }
+
+  const base64Images = await Promise.all([...files].map(file => {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
+  }));
+
+  try {
+    await fetch(`http://localhost:3000/user/gallery/upload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, images: base64Images })
+    });
+
+    // 🧹 Clear preview and controls
+    document.getElementById("uploadImg").value = "";
+    document.getElementById("preview-container").innerHTML = "";
+    document.getElementById("preview-container").classList.add("hidden");
+    document.getElementById("upload-controls").classList.add("hidden");
+
+    // ✅ Reload gallery
+    loadGallery();
+  } catch (err) {
+    alert("Upload failed");
+    console.error(err);
+  }
+}
+
+async function loadGallery() {
+  try {
+    const res = await fetch(`http://localhost:3000/user/gallery/${email}`);
+    const images = await res.json();
+
+    const galleryEl = document.getElementById("my-gallery");
+    if (!images.length) {
+      galleryEl.innerHTML = "<p class='text-gray-500 col-span-full'>No images uploaded yet.</p>";
+      return;
+    }
+
+    galleryEl.innerHTML = images.map(img =>
+      `<img src="${img}" class="w-full h-40 object-cover rounded shadow" />`
+    ).join('');
+  } catch (err) {
+    console.error("❌ Gallery failed to load:", err);
+    document.getElementById("my-gallery").innerHTML = "<p class='text-red-500'>❌ Error loading gallery.</p>";
+  }
+}
+
+let currentChatTarget = null;
+
+const messageBox = document.getElementById("message-box");
+const messageInput = document.getElementById("message-input");
+const messageSendBtn = document.getElementById("message-send-btn");
+const messageUserList = document.getElementById("message-user-list");
+
+const callUserList = document.getElementById("call-user-list");
+const callVideoBtn = document.getElementById("call-video-btn");
+const callAudioBtn = document.getElementById("call-audio-btn");
+const callSelectedName = document.getElementById("call-selected-name");
+
+// 🔐 Escape HTML to prevent XSS
+function sanitizeHTML(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// 📤 Send Message
+function sendMessage() {
+  const message = messageInput.value.trim(); // ✅ correct variable
+  if (!message || !currentChatTarget) return;
+
+  const sanitizedMsg = sanitizeHTML(message);
+
+  // Emit via socket
+  socket.emit("private_message", {
+    to: currentChatTarget,
+    from: email,
+    message: sanitizedMsg
+  });
+
+  // Show on UI immediately
+  messageBox.innerHTML += `
+    <div class="flex justify-end">
+      <div class="bg-pink-100 text-sm px-3 py-2 rounded-xl max-w-xs mb-1">
+        ${sanitizedMsg}
+      </div>
+    </div>
+  `;
+  messageBox.scrollTop = messageBox.scrollHeight;
+  messageInput.value = ""; // ✅ clear input
+}
+
+// 📥 Receive Message
+socket.on("private_message", ({ from, message }) => {
+  if (from !== currentChatTarget) return; // Only show if chatting with sender
+
+  const sanitizedMsg = sanitizeHTML(message);
+  messageBox.innerHTML += `
+    <div class="flex justify-start">
+      <div class="bg-gray-200 text-sm px-3 py-2 rounded-xl max-w-xs mb-1">
+        ${sanitizedMsg}
+      </div>
+    </div>
+  `;
+  messageBox.scrollTop = messageBox.scrollHeight;
+});
+
+// 💬 Load Matches and Show Modal
+async function checkChatAccess(view = "messages") {
+  const container = view === "messages" ? messageUserList : callUserList;
+  if (!container) return;
+
+  try {
+    const res = await fetch(`http://localhost:3000/user/matches/${email}`);
+    const matchedEmails = await res.json();
+
+    if (!Array.isArray(matchedEmails) || matchedEmails.length === 0) {
+      container.innerHTML = "<p class='text-sm text-gray-400'>No matches yet.</p>";
+      return;
+    }
+
+    const profiles = await Promise.all(
+      matchedEmails.map(e => fetch(`http://localhost:3000/user/${e}`).then(r => r.json()))
+    );
+
+    container.innerHTML = profiles.map(u => `
+      <div 
+        onclick="startChat('${u.email}', '${sanitizeHTML(u.profileName || u.fullName || 'Unnamed')}', '${view}')"
+        class="cursor-pointer p-2 hover:bg-pink-50 rounded flex items-center gap-2 transition"
+      >
+        <img src="${u.image || 'https://placehold.co/40'}" class="w-10 h-10 rounded-full object-cover border" />
+        <div>
+          <p class="font-medium">${sanitizeHTML(u.profileName || u.fullName || 'Unnamed')}</p>
+          <p class="text-xs text-gray-500">${u.email}</p>
+        </div>
+      </div>
+    `).join("");
+  } catch (err) {
+    container.innerHTML = "<p class='text-sm text-red-500'>Error loading matches.</p>";
+  }
+}
+
+// 📂 Start Chat with a Match
+async function startChat(targetEmail, name, view = "messages") {
+  currentChatTarget = targetEmail;
+
+  if (view === "messages") {
+    document.getElementById("message-header").textContent = `Chatting with ${name}`;
+    messageInput.disabled = false;
+    messageSendBtn.disabled = false;
+    messageInput.focus();
+
+    // Load messages
+    messageBox.innerHTML = "<p class='text-gray-400'>Loading messages...</p>";
+    try {
+      const res = await fetch(`http://localhost:3000/messages/${email}/${targetEmail}`);
+      const messages = await res.json();
+
+      if (!Array.isArray(messages) || messages.length === 0) {
+        messageBox.innerHTML = `<p class='text-gray-400 italic'>No messages yet. Start the conversation!</p>`;
+        return;
+      }
+
+      messageBox.innerHTML = messages.map(m => {
+        const isSender = m.from === email;
+        const align = isSender ? "justify-end" : "justify-start";
+        const bg = isSender ? "bg-pink-100" : "bg-gray-200";
+        return `
+          <div class="flex ${align}">
+            <div class="${bg} text-sm px-3 py-2 rounded-xl max-w-xs mb-1">
+              ${sanitizeHTML(m.message)}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      messageBox.scrollTop = messageBox.scrollHeight;
+    } catch (err) {
+      messageBox.innerHTML = "<p class='text-red-500'>❌ Failed to load messages</p>";
+    }
+  } else if (view === "calls") {
+    callSelectedName.textContent = `Ready to call ${name}`;
+    callVideoBtn.disabled = false;
+    callAudioBtn.disabled = false;
+  }
+}
+
+
+  function openSubscriptionModal() {
+    document.getElementById("subscriptionModal").classList.remove("hidden");
+  }
+
+  function subscribe() {
+    user.accountType = 'premium';
+    alert("Subscription activated!");
+    document.getElementById("subscriptionModal").classList.add("hidden");
+  }
+
+const likedUsers = new Set(); // Global tracker for likes
+
+async function loadUsers(filters = {}) {
+  const params = new URLSearchParams({ ...filters, exclude: email }).toString();
+  const container = document.getElementById("explore-cards");
+
+  let users = [];
+  let currentUser = null;
+
+  try {
+    const [usersRes, currentUserRes] = await Promise.all([
+      fetch(`http://localhost:3000/users?${params}`),
+      fetch(`http://localhost:3000/user/${email}`)
+    ]);
+
+    if (!usersRes.ok || !currentUserRes.ok) throw new Error("Failed to fetch data");
+
+    users = await usersRes.json();
+    currentUser = await currentUserRes.json();
+  } catch (err) {
+    console.error("❌ Error loading users:", err);
+    container.innerHTML = `<p class="text-red-500 col-span-full">Failed to load matches. Try again later.</p>`;
+    return;
+  }
+
+  // ❌ Remove users without userId
+  users = users.filter(u => u.userId);
+
+  if (!users.length) {
+    container.innerHTML = `<p class="text-gray-500 col-span-full">No matches found.</p>`;
+    return;
+  }
+
+  const currentYear = new Date().getFullYear();
+  const hasUserId = Boolean(currentUser.userId);
+
+  // 🔔 Show warning if current user doesn't have a userId
+  const notice = !hasUserId
+    ? `<div class="col-span-full bg-yellow-100 text-yellow-800 px-4 py-3 rounded mb-4 text-center text-sm">
+         You need to verify your account ID before you can like anyone. 
+         <span onclick="openProfileSection()" class="underline cursor-pointer text-pink-600 hover:text-pink-800">Verify Now</span>
+       </div>`
+    : "";
+
+  container.innerHTML =
+    notice +
+    users
+      .map(u => {
+        const age = u.year ? currentYear - u.year : "N/A";
+        const locationParts = [u.district, u.state, u.country].filter(Boolean);
+        const location = locationParts.join(", ") || "Unknown";
+
+        const profileLink = `profile.html?id=${u.userId}`;
+        const likeBtnId = `like-${u.email.replace(/[^a-zA-Z0-9]/g, "")}`;
+
+        return `
+          <div 
+            class="bg-white p-4 rounded-xl shadow hover:shadow-md transition transform hover:scale-105 duration-200 text-center cursor-pointer group"
+            onclick="window.location.href='${profileLink}'"
+          >
+            <img 
+              src="${u.image || 'https://placehold.co/200'}" 
+              alt="${u.profileName || 'User'}"
+              class="rounded-full mx-auto mb-3 w-24 h-24 object-cover border-2 border-pink-200 shadow-sm group-hover:scale-105 transition"
+            />
+            <h3 class="font-semibold text-lg">${u.profileName || 'Unnamed'}, <span class="text-sm text-gray-600">${age}</span></h3>
+            <p class="text-sm text-gray-500 italic">${location}</p>
+            <div class="mt-4 flex justify-center gap-2">
+              ${hasUserId ? `
+                <button 
+                  id="${likeBtnId}"
+                  onclick="event.stopPropagation(); likeUser('${u.email}', '${likeBtnId}')"
+                  class="like-btn px-4 py-2 bg-pink-500 text-white text-sm rounded-full hover:bg-pink-600 transition"
+                >
+                  💖 Like
+                </button>` : ''}
+              <button 
+                onclick="event.stopPropagation(); window.location.href='${profileLink}'"
+                class="px-4 py-2 border text-pink-600 border-pink-500 text-sm rounded-full hover:bg-pink-50"
+              >
+                View Profile
+              </button>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+}
+
+function applyFilters() {
+  const location = document.getElementById("filter-location").value.trim() || user?.district || "";
+  const minAge = document.getElementById("filter-min-age").value.trim();
+  const maxAge = document.getElementById("filter-max-age").value.trim();
+  const gender = document.getElementById("filter-gender").value;
+
+  const relationshipType = document.getElementById("filter-relationshipType").value;
+  const orientation = document.getElementById("filter-orientation").value;
+  const sexualPreference = document.getElementById("filter-sexualPreference").value;
+  const smoke = document.getElementById("filter-smoke").value;
+  const drink = document.getElementById("filter-drink").value;
+  const loveLanguage = document.getElementById("filter-loveLanguage").value;
+
+  loadUsers({
+    location,
+    minAge,
+    maxAge,
+    gender,
+    relationshipType,
+    orientation,
+    sexualPreference,
+    smoke,
+    drink,
+    loveLanguage
+  });
+}
+
+
+
+ async function likeUser(targetEmail, buttonId) {
+  if (likedUsers.has(targetEmail)) return;
+
+  likedUsers.add(targetEmail);
+  const btn = document.getElementById(buttonId);
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "❤️ Liked";
+    btn.classList.add("bg-gray-400", "cursor-not-allowed");
+    btn.classList.remove("bg-pink-500", "hover:bg-pink-600");
+  }
+
+  try {
+    const res = await fetch("http://localhost:3000/user/like", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ liker: email, liked: targetEmail })
+    });
+
+    const result = await res.json();
+    if (result.match) {
+      alert("🎉 It's a match! You can now chat.");
+      checkChatAccess();
+    } else {
+      console.log("💖 Like registered.");
+    }
+  } catch (err) {
+    console.error("❌ Failed to like user:", err);
+  }
+}
+
+
+  loadUserData();
+  checkChatAccess();
+  switchSection("explore");
+  loadUsers();
+async function requestUserIdCode() {
+  const statusEl = document.getElementById("id-status");
+  const input = document.getElementById("id-code-input");
+  const verifyBtn = document.getElementById("verify-id-btn");
+  const getIdBtn = document.getElementById("get-id-btn");
+
+  // Disable button to prevent multiple sends
+  getIdBtn.disabled = true;
+  getIdBtn.textContent = "Sending...";
+
+  try {
+    const res = await fetch("http://localhost:3000/send-id-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      input.classList.remove("hidden");
+      verifyBtn.classList.remove("hidden");
+      statusEl.textContent = "📩 Verification code sent to your email.";
+      getIdBtn.classList.add("hidden"); // Hide button permanently after first use
+      input.focus();
+    } else {
+      getIdBtn.disabled = false;
+      getIdBtn.textContent = "Get My ID";
+      statusEl.textContent = "❌ Failed to send verification code.";
+    }
+
+  } catch (err) {
+    console.error("❌ Error sending ID code:", err);
+    getIdBtn.disabled = false;
+    getIdBtn.textContent = "Get My ID";
+    statusEl.textContent = "❌ Network error. Please try again.";
+  }
+}
+
+async function verifyAndGenerateId() {
+  const code = document.getElementById("id-code-input").value.trim();
+  if (!code || code.length !== 6) {
+    document.getElementById("id-status").textContent = "Enter a valid 6-digit code.";
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:3000/verify-id-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById("user-id-display").textContent = data.userId;
+      document.getElementById("id-status").textContent = "✅ ID assigned successfully!";
+    } else {
+      document.getElementById("id-status").textContent = "❌ Invalid or expired code.";
+    }
+  } catch (err) {
+    console.error("ID verification error:", err);
+    document.getElementById("id-status").textContent = "Server error.";
+  }
+}
+function previewSelectedImages() {
+  const files = document.getElementById("uploadImg").files;
+  const previewContainer = document.getElementById("preview-container");
+  const uploadControls = document.getElementById("upload-controls");
+
+  previewContainer.innerHTML = "";
+  if (!files.length) {
+    previewContainer.classList.add("hidden");
+    uploadControls.classList.add("hidden");
+    return;
+  }
+
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "relative group overflow-hidden rounded shadow hover:shadow-lg transition";
+
+      const img = document.createElement("img");
+      img.src = reader.result;
+      img.className = "w-full h-40 object-cover transition-transform duration-200 group-hover:scale-105";
+
+      wrapper.appendChild(img);
+      previewContainer.appendChild(wrapper);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  previewContainer.classList.remove("hidden");
+  uploadControls.classList.remove("hidden");
+}
+
+async function loadLikes() {
+  try {
+    const res = await fetch(`http://localhost:3000/user/${email}`);
+    const user = await res.json();
+
+    const youLiked = user.likes || [];
+    const likedYou = user.likedBy || [];
+
+    const youLikedList = document.getElementById("you-liked");
+    const likedYouList = document.getElementById("liked-you");
+
+    youLikedList.innerHTML = '';
+    likedYouList.innerHTML = '';
+
+    if (youLiked.length === 0) {
+      youLikedList.innerHTML = '<li class="text-gray-400">You haven\'t liked anyone yet.</li>';
+    }
+
+    if (likedYou.length === 0) {
+      likedYouList.innerHTML = '<li class="text-gray-400">No one has liked you yet.</li>';
+    }
+
+    for (const likedEmail of youLiked) {
+      const userRes = await fetch(`http://localhost:3000/user/${likedEmail}`);
+      if (!userRes.ok) continue;
+      const u = await userRes.json();
+      if (!u.userId) continue;
+
+      youLikedList.innerHTML += `
+        <li>
+          <a href="profile.html?id=${u.userId}" class="flex items-center space-x-3 hover:bg-pink-50 p-2 rounded transition">
+            <img src="${u.image || 'https://placehold.co/50'}" class="w-10 h-10 rounded-full object-cover border border-pink-300 shadow-sm" />
+            <span class="font-medium text-gray-700">${u.profileName || 'Unnamed'}</span>
+          </a>
+        </li>
+      `;
+    }
+
+    for (const likedByEmail of likedYou) {
+      const userRes = await fetch(`http://localhost:3000/user/${likedByEmail}`);
+      if (!userRes.ok) continue;
+      const u = await userRes.json();
+      if (!u.userId) continue;
+
+      likedYouList.innerHTML += `
+        <li>
+          <a href="profile.html?id=${u.userId}" class="flex items-center space-x-3 hover:bg-pink-50 p-2 rounded transition">
+            <img src="${u.image || 'https://placehold.co/50'}" class="w-10 h-10 rounded-full object-cover border border-pink-300 shadow-sm" />
+            <span class="font-medium text-gray-700">${u.profileName || 'Unnamed'}</span>
+          </a>
+        </li>
+      `;
+    }
+
+  } catch (err) {
+    console.error("❌ Failed to load likes:", err);
+  }
+}
+function switchSection(sectionId) {
+  const sections = document.querySelectorAll('.section');
+  sections.forEach(section => section.classList.add('hidden'));
+
+  const targetSection = document.getElementById(sectionId);
+  if (targetSection) targetSection.classList.remove('hidden');
+
+  const buttons = document.querySelectorAll(".nav-btn");
+  buttons.forEach(btn => btn.classList.remove("text-pink-600", "font-bold"));
+  const active = Array.from(buttons).find(btn => btn.textContent.toLowerCase().includes(sectionId));
+  if (active) active.classList.add("text-pink-600", "font-bold");
+
+  // Handle dynamic tab loads
+  if (sectionId === 'gallery') loadGallery();
+  if (sectionId === 'likes') loadLikes();
+  if (sectionId === 'messages') checkChatAccess('messages');
+  if (sectionId === 'calls') {
+    checkChatAccess('calls');
+    callVideoBtn.disabled = true;
+    callAudioBtn.disabled = true;
+    callSelectedName.textContent = "📞 Select a user to call";
+  }
+}
+let peerConnection;
+let localStream;
+let remoteStream;
+let latestOffer;
+let callType = null;
+
+const configuration = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
+
+// 📞 Start Call
+async function startCall(type) {
+  if (!currentChatTarget) return;
+
+  callType = type;
+  try {
+    await document.getElementById("outgoing-ring").play();
+  } catch (e) {
+    console.warn("Outgoing ring failed:", e);
+  }
+
+  showCallUI("starting", type);
+
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: type === "video",
+      audio: true
+    });
+
+    initPeer();
+
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+    document.getElementById("localVideo").srcObject = localStream;
+    document.getElementById("remoteVideo").srcObject = new MediaStream();
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    socket.emit("call-offer", {
+      to: currentChatTarget,
+      from: email,
+      offer,
+      type
+    });
+  } catch (error) {
+    console.error("Call failed to start:", error);
+    endCall(false);
+  }
+}
+
+// ✅ Accept Incoming Call
+async function acceptCall() {
+  stopAllRings();
+  hideRinger();
+
+  const constraints = {
+    video: callType === "video",
+    audio: true
+  };
+
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    initPeer();
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(latestOffer));
+
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+
+    socket.emit("call-answer", {
+      to: currentChatTarget,
+      answer
+    });
+
+    showCallUI("accepted");
+  } catch (e) {
+    console.error("Failed to accept call:", e);
+    endCall();
+  }
+}
+
+// 🧠 Helper to Setup PeerConnection
+function initPeer() {
+  peerConnection = new RTCPeerConnection(configuration);
+  remoteStream = new MediaStream();
+
+  document.getElementById("remoteVideo").srcObject = remoteStream;
+
+  peerConnection.ontrack = event => {
+    event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
+  };
+
+  peerConnection.onicecandidate = e => {
+    if (e.candidate) {
+      socket.emit("ice-candidate", {
+        to: currentChatTarget,
+        candidate: e.candidate
+      });
+    }
+  };
+}
+
+// 📥 Receive Offer
+socket.on("call-offer", ({ from, offer, type }) => {
+  stopAllRings();
+  currentChatTarget = from;
+  latestOffer = offer;
+  callType = type;
+
+  document.getElementById("ringer").classList.remove("hidden");
+  document.getElementById("ringer-type").textContent =
+    type === "video" ? "📹 Video Call" : "📞 Audio Call";
+
+  try {
+    document.getElementById("incoming-ring").play();
+  } catch (e) {
+    console.warn("Auto-play blocked:", e);
+  }
+});
+
+// 📩 Answer Received
+socket.on("call-answer", async ({ answer }) => {
+  stopAllRings();
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+  showCallUI("connected");
+});
+
+// ❄️ ICE Candidate
+socket.on("ice-candidate", async ({ candidate }) => {
+  if (peerConnection && candidate) {
+    try {
+      await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (e) {
+      console.error("ICE candidate error:", e);
+    }
+  }
+});
+
+// ❌ Rejected
+socket.on("call-rejected", () => {
+  endCall(false);
+  alert("❌ Call was rejected.");
+});
+
+// ❌ Cancelled
+socket.on("call-cancelled", () => {
+  stopAllRings();
+  hideRinger();
+  resetCallUI();
+  alert("❌ Caller canceled the call.");
+});
+
+// 🔴 Ended
+socket.on("call-ended", () => {
+  endCall(false);
+  alert("🔴 The other person ended the call.");
+});
+
+// ❌ Reject Call (manual)
+function rejectCall() {
+  stopAllRings();
+  hideRinger();
+  socket.emit("call-rejected", { to: currentChatTarget });
+}
+
+// 🔴 End Call
+function endCall(showAlert = true) {
+  stopAllRings();
+  resetCallUI();
+
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+
+  [localStream, remoteStream].forEach(stream => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+  });
+
+  if (latestOffer && !peerConnection?.remoteDescription) {
+    socket.emit("call-cancelled", { to: currentChatTarget });
+  } else {
+    socket.emit("call-ended", { to: currentChatTarget });
+  }
+
+  latestOffer = null;
+  callType = null;
+
+  if (showAlert) alert("🔴 Call has ended.");
+}
+
+// 🧼 Utility: Show Call UI State
+function showCallUI(state, type = null) {
+  const callArea = document.getElementById("embedded-call-area");
+  const endBtn = document.getElementById("end-call-btn");
+  const callName = document.getElementById("call-selected-name");
+
+  callArea.classList.remove("hidden");
+  endBtn.classList.remove("hidden");
+
+  if (state === "starting") {
+    callName.textContent = type === "video" ? "📹 Starting Video Call..." : "📞 Starting Audio Call...";
+  } else if (state === "accepted" || state === "connected") {
+    callName.textContent = "🔗 Call connected!";
+  }
+}
+
+// 🧼 Utility: Reset Call UI
+function resetCallUI() {
+  document.getElementById("embedded-call-area").classList.add("hidden");
+  document.getElementById("end-call-btn").classList.add("hidden");
+  document.getElementById("call-selected-name").textContent = "📞 Select a user to call";
+}
+
+// 🧼 Utility: Hide Ringer
+function hideRinger() {
+  document.getElementById("ringer").classList.add("hidden");
+}
+
+// 🔇 Stop All Ring Tones
+function stopAllRings() {
+  ["incoming-ring", "outgoing-ring"].forEach(id => {
+    const audio = document.getElementById(id);
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+  });
+}
+
+
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('hidden');
+  }
+
+  function logout() {
+    alert('Logged out!');
+    localStorage.removeItem("user_email");
+    window.location.href = "login.html";
+  }
+
+window.onload = () => {
+  switchSection('explore');
+  loadUserData();
+  loadUsers();
+}
+
+
+function stopAllRings() {
+  ["incoming-ring", "outgoing-ring"].forEach(id => {
+    const audio = document.getElementById(id);
+    audio.pause();
+    audio.currentTime = 0;
+  });
+}
+
+
+
+
+</script>
+
+</style>
+
+</body>
+</html>
