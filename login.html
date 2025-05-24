@@ -118,6 +118,9 @@ async function submitReset() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    // If button is already disabled, prevent re-submit
+    if (loginBtn.disabled || loginBtn.dataset.state === "loading") return;
+
     const email = form.querySelector('input[type="email"]').value.trim();
     const password = form.querySelector('input[type="password"]').value.trim();
 
@@ -126,8 +129,9 @@ async function submitReset() {
       return;
     }
 
-    // 🔐 Disable the login button to prevent duplicates
+    // Lock button state
     loginBtn.disabled = true;
+    loginBtn.dataset.state = "loading";
     loginBtn.textContent = "Logging in...";
 
     try {
@@ -145,16 +149,19 @@ async function submitReset() {
       } else {
         alert(data.message || "Login failed. Try again.");
         loginBtn.disabled = false;
+        loginBtn.removeAttribute("data-state");
         loginBtn.textContent = "Login";
       }
     } catch (err) {
       console.error("❌ Login error:", err);
       alert("Server error. Try again later.");
       loginBtn.disabled = false;
+      loginBtn.removeAttribute("data-state");
       loginBtn.textContent = "Login";
     }
   });
 </script>
+
 
 
 </body>

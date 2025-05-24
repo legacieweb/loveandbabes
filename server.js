@@ -457,6 +457,30 @@ io.on("connection", (socket) => {
   });
 });
 
+// 🔐 Login Route
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // 👇 Plain-text password match (for demo only — use hashing like bcrypt in production)
+    if (user.password !== password) {
+      return res.status(401).json({ success: false, message: "Invalid password" });
+    }
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error("❌ Login error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
 // 🚀 Start server
 server.listen(PORT, () => {
   console.log(`🚀 Server with Socket.IO running at http://localhost:${PORT}`);
